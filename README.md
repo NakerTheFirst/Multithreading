@@ -28,6 +28,13 @@ Ensure you have Python installed along with PyQt6. You can install PyQt6 using p
 pip install PyQt6
 ```
 
+## Running the Application
+Clone this repository and navigate to the directory containing `multithreading.py`. Run the following command to start the application:
+```bash
+python multithreading.py
+```
+
+
 ## Architecture
 - **MainWindow**: Manages the UI and threads.
 - **Worker**: Handles the appending of characters.
