@@ -29,9 +29,9 @@ pip install PyQt6
 ```
 
 ## Running the Application
-Clone this repository and navigate to the directory containing `multithreading.py`. Run the following command to start the application:
+Clone this repository and navigate to the directory containing `multithread.py`. Run the following command to start the application:
 ```bash
-python multithreading.py
+python multithread.py
 ```
 
 
