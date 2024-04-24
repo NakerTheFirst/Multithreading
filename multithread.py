@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
         self.setFixedSize(400, 400)
 
         self.init_ui()
-        self.start_threads()
+        self.prepare_threads()
 
     def init_ui(self):
         # Create central widget and layout
@@ -50,39 +50,67 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.sleep_textbox, 2, 2, 1, 2)
 
         # Enter Button
-        self.enter_button = QPushButton("Enter")
+        self.enter_button = QPushButton("Start")
         self.enter_button.setStyleSheet("background-color: #2E8E91; color: #DBF2F3; border: none; font-size: 20px")
         layout.addWidget(self.enter_button, 3, 0, 1, 4)
 
+        self.enter_button.clicked.connect(self.start_all_threads)
+
         central_widget.setLayout(layout)
 
-    def start_threads(self):
-        # Thread setup
+    def prepare_threads(self):
+        # Prepare thread setup without starting
         self.thread1 = QThread()
         self.worker1 = Worker("p", 1)
         self.worker1.moveToThread(self.thread1)
         self.worker1.update_signal.connect(self.update_textbox)
         self.thread1.started.connect(self.worker1.run)
-        self.thread1.start()
 
         self.thread2 = QThread()
         self.worker2 = Worker("s", 1)
         self.worker2.moveToThread(self.thread2)
         self.worker2.update_signal.connect(self.update_textbox)
         self.thread2.started.connect(self.worker2.run)
-        self.thread2.start()
 
         self.thread3 = QThread()
         self.worker3 = Worker("t", 1)
         self.worker3.moveToThread(self.thread3)
         self.worker3.update_signal.connect(self.update_textbox)
         self.thread3.started.connect(self.worker3.run)
-        self.thread3.start()
+
+        self.deleting_thread = QThread()
+        self.deleting_worker = DeletingWorker(self.get_delay)
+        self.deleting_worker.moveToThread(self.deleting_thread)
+        self.deleting_worker.delete_signal.connect(self.delete_last_character)
+        self.deleting_thread.started.connect(self.deleting_worker.run)
+
+    def start_all_threads(self):
+        # Start or restart threads
+        if not self.thread1.isRunning():
+            self.thread1.start()
+        if not self.thread2.isRunning():
+            self.thread2.start()
+        if not self.thread3.isRunning():
+            self.thread3.start()
+        if not self.deleting_thread.isRunning():
+            self.deleting_thread.start()
 
     def update_textbox(self, char):
         current_text = self.buffer_textbox.text()
         new_text = current_text + char
         self.buffer_textbox.setText(new_text)
+
+    def delete_last_character(self):
+        current_text = self.buffer_textbox.text()
+        if current_text:
+            new_text = current_text[:-1]
+            self.buffer_textbox.setText(new_text)
+
+    def get_delay(self):
+        try:
+            return int(self.sleep_textbox.text())
+        except ValueError:
+            return 1  # default delay if conversion fails
 
 
 class Worker(QObject):
@@ -97,6 +125,23 @@ class Worker(QObject):
         while True:
             self.update_signal.emit(self.character)
             QThread.sleep(self.delay)
+
+
+class DeletingWorker(QObject):
+    delete_signal = pyqtSignal()
+
+    def __init__(self, get_delay_func):
+        super().__init__()
+        self.get_delay_func = get_delay_func
+        self.running = True
+
+    def run(self):
+        while self.running:
+            QThread.sleep(self.get_delay_func())
+            self.delete_signal.emit()
+
+    def stop(self):
+        self.running = False
 
 
 def main():
